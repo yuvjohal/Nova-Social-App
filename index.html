@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nova Social App</title>
+<meta name="description" content="Clickable prototype of the Nova Social student app: events, seat and table booking, food to your seat, fight night with Kalshi odds, tickets, hosting and the lounge.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a single phone-sized app centred on a dark stage; a presenter rail on wide screens jumps between screens. */
+:root{
+  color-scheme: dark;
+  --stage:#070505;
+  --bg:#0d0a0a;
+  --surface:#181212;
+  --surface-2:#231a1a;
+  --line:#33272a;
+  --red:#e3262f;
+  --gold:#f2b544;
+  --gold-soft:#f2b5441f;
+  --red-soft:#e3262f1f;
+  --text:#f7f1ec;
+  --muted:#a99c97;
+  --ok:#3cc47c;
+  --display:"Barlow Condensed","Arial Narrow","Roboto Condensed",Impact,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--stage);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#root{height:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.ico{display:inline-flex;align-items:center;justify-content:center;line-height:0}
+.boot{height:100%;display:grid;place-items:center;color:var(--muted);text-align:center;padding:24px}
+.boot b{display:block;color:var(--text);font-size:16px;margin-bottom:6px}
+.stage{min-height:100%;display:flex;align-items:center;justify-content:center;gap:48px;padding-block:28px}
+
+/* presenter rail */
+.rail{width:260px;display:flex;flex-direction:column;gap:14px}
+.rail h1{font-family:var(--display);font-weight:800;font-size:40px;line-height:.95;letter-spacing:.5px;margin:0;text-transform:uppercase}
+.rail h1 span{color:var(--gold)}
+.rail p{color:var(--muted);margin:0;font-size:13px}
+.rail-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.rail-list button{background:transparent;border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:left;display:flex;justify-content:space-between;align-items:center;color:var(--text)}
+.rail-list button.on{border-color:var(--red);background:var(--red-soft)}
+.rail-list button small{color:var(--muted);font-size:11px}
+.rail .note{font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+
+/* phone */
+.phone{width:390px;height:844px;max-height:calc(100vh - 56px);min-height:640px;background:var(--bg);border-radius:52px;border:10px solid #000;
+  box-shadow:0 0 0 1px #2a1f1f,0 30px 80px -20px #e3262f33,0 40px 120px -30px #000;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:118px;height:32px;background:#000;border-radius:20px;z-index:30}
+.statusbar{height:46px;flex:none;display:flex;justify-content:space-between;align-items:flex-end;padding:0 28px 6px;font-size:13px;font-weight:600}
+.statusbar .sb-r{display:flex;gap:6px;align-items:center}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding:4px 18px 104px;scrollbar-width:none;display:flex;flex-direction:column;gap:16px;-webkit-overflow-scrolling:touch}
+.screen > *{flex:none}
+.screen::-webkit-scrollbar{display:none}
+.view{display:flex;flex-direction:column;gap:16px}
+
+@media (max-width:900px){.rail{display:none}}
+@media (max-width:500px){
+  body{padding-left:0;padding-right:0}
+  .stage{padding-block:0;min-height:100%;height:100%}
+  .phone{width:100%;height:100%;max-height:none;min-height:0;border:0;border-radius:0;box-shadow:none}
+  .notch,.statusbar{display:none}
+  .screen{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:max(14px,env(safe-area-inset-top,0px))}
+}
+
+/* shared */
+.topbar{display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;align-items:center;gap:8px}
+.brand b{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:1px;text-transform:uppercase}
+.brand b span{color:var(--gold)}
+.icon-btn{width:38px;height:38px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center}
+.h2{font-family:var(--display);font-weight:700;font-size:26px;text-transform:uppercase;letter-spacing:.4px;margin:0;line-height:1}
+.label{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600}
+.muted{color:var(--muted)}
+.row{display:flex;align-items:center;gap:10px}
+.between{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip.on{background:var(--red);border-color:var(--red)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-18px;padding-inline:18px}
+.chips::-webkit-scrollbar{display:none}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:4px 9px;border-radius:999px}
+.pill.red{background:var(--red);color:#fff}
+.pill.gold{background:var(--gold-soft);color:var(--gold);border:1px solid #f2b54455}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.live-dot{animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.live-dot{animation:none}.toast{transition:none}}
+.btn{border:0;border-radius:14px;padding:14px 16px;font-weight:700;font-size:15px;width:100%;background:var(--red);color:#fff;display:flex;justify-content:center;align-items:center;gap:8px}
+.btn:disabled{background:var(--surface-2);color:var(--muted);cursor:not-allowed}
+.btn.gold{background:var(--gold);color:#1a1006}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+.price{font-family:var(--display);font-weight:700;font-size:22px;font-variant-numeric:tabular-nums}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* home */
+.hero{border-radius:22px;padding:18px;position:relative;overflow:hidden;
+  background:radial-gradient(120% 90% at 100% 0%,#e3262f55,transparent 60%),linear-gradient(160deg,#2a0d10,#120b0b 70%);border:1px solid #4a1d21}
+.hero .vs{font-family:var(--display);font-weight:800;font-size:40px;line-height:.9;text-transform:uppercase;margin:12px 0 6px}
+.hero .vs em{font-style:normal;color:var(--gold);font-size:26px;vertical-align:middle;padding:0 4px}
+.hero-meta{display:flex;gap:14px;color:#e8d8d2;font-size:12px;margin-bottom:14px;flex-wrap:wrap}
+.hero .btns{display:flex;gap:8px}
+.hero .btns .btn{padding:11px 12px;font-size:13px}
+.lounge-strip{display:flex;align-items:center;gap:12px;text-align:left;width:100%;color:var(--text)}
+.meter{height:6px;border-radius:6px;background:var(--surface-2);overflow:hidden;flex:1}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--red))}
+.event{display:grid;grid-template-columns:54px 1fr auto;gap:12px;align-items:center;padding:12px;border-radius:16px;background:var(--surface);border:1px solid var(--line);text-align:left;width:100%;color:var(--text)}
+.datebox{border-radius:12px;background:var(--surface-2);text-align:center;padding:7px 0;line-height:1}
+.datebox b{display:block;font-family:var(--display);font-size:24px}
+.datebox small{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.event h3{margin:0 0 3px;font-size:14px;font-weight:700;line-height:1.25}
+.event .sub{font-size:12px;color:var(--muted)}
+.event .from{text-align:right;font-size:11px;color:var(--muted)}
+.event .from b{display:block;font-family:var(--display);font-size:20px;color:var(--text)}
+.tag{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+.tag.fight{color:var(--red)}.tag.music{color:var(--gold)}.tag.film{color:#d9a6ff}.tag.games{color:#6fd3ff}
+
+/* booking */
+.back{display:flex;align-items:center;gap:6px;background:none;border:0;color:var(--muted);padding:0;font-weight:600}
+.pkg{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:13px 14px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);text-align:left;width:100%;color:var(--text)}
+.pkg.on{border-color:var(--gold);background:linear-gradient(0deg,var(--gold-soft),var(--gold-soft)),var(--surface)}
+.pkg b{font-size:14px}
+.pkg > span{grid-column:1;font-size:12px;color:var(--muted)}
+.pkg .price{grid-row:1/3;grid-column:2;align-self:center}
+.pkg .price small{font-family:var(--body);font-size:11px;color:var(--muted)}
+.seatmap{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 10px}
+.screenbar{height:6px;border-radius:6px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 20px 4px}
+.screenlabel{text-align:center;font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:12px}
+.tables{display:flex;justify-content:center;gap:8px;margin-bottom:12px}
+.table{display:grid;grid-template-columns:repeat(2,18px);gap:4px;padding:6px;border-radius:10px;background:#2a1c14;border:1px solid #5a3d1f}
+.seatrows{display:flex;flex-direction:column;gap:5px;align-items:center}
+.srow{display:flex;gap:4px;align-items:center}
+.srow .rl{width:12px;font-size:9px;color:var(--muted);text-align:center}
+.gap{width:10px}
+.seat{width:20px;height:18px;border-radius:5px 5px 3px 3px;border:0;padding:0;background:#3a2c2e}
+.seat.free{background:#5b4548}
+.seat.taken{background:#241b1c;cursor:not-allowed}
+.seat.sel{background:var(--gold)}
+.seat.dim{opacity:.25;cursor:not-allowed}
+.rail-zone{margin-top:12px;border:1px dashed #5b4548;border-radius:10px;text-align:center;font-size:11px;color:var(--muted);padding:7px}
+.legend{display:flex;gap:12px;justify-content:center;font-size:11px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.stepper{display:flex;align-items:center;gap:12px}
+.stepper button{width:32px;height:32px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);font-size:18px;line-height:1}
+.summary{position:sticky;bottom:0;background:linear-gradient(0deg,var(--bg) 70%,transparent);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+
+/* food */
+.menu-item{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:10px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.food-ico{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:18px}
+.menu-item h4{margin:0;font-size:14px}
+.menu-item p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+.add{width:34px;height:34px;border-radius:11px;border:0;background:var(--red);color:#fff;font-size:20px;line-height:1}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:28px;height:28px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2)}
+.deliver{display:flex;gap:12px;align-items:center}
+.track{display:flex;flex-direction:column;gap:0}
+.step{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;padding-bottom:14px;position:relative}
+.step:not(:last-child)::after{content:"";position:absolute;left:12px;top:24px;bottom:2px;width:2px;background:var(--line)}
+.step .b{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;background:var(--bg);z-index:1}
+.step.done .b{background:var(--ok);border-color:var(--ok);color:#06150c}
+.step.now .b{border-color:var(--gold);color:var(--gold)}
+.step.done:not(:last-child)::after{background:var(--ok)}
+
+/* live */
+.fighters{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;text-align:center}
+.fighter .ava{width:64px;height:64px;border-radius:50%;margin:0 auto 6px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:24px}
+.fighter b{display:block;font-size:14px}
+.fighter small{color:var(--muted);font-size:11px}
+.round{font-family:var(--display);font-weight:800;font-size:15px;color:var(--gold);text-transform:uppercase}
+.oddsbar{display:flex;height:34px;border-radius:10px;overflow:hidden;font-weight:700;font-size:13px}
+.oddsbar div{display:flex;align-items:center;padding:0 10px;transition:width .8s ease}
+.oddsbar .a{background:var(--red);justify-content:flex-start}
+.oddsbar .b{background:#3a2c2e;justify-content:flex-end}
+.market{display:flex;flex-direction:column;gap:8px}
+.mrow{display:grid;grid-template-columns:1fr 52px;gap:10px;align-items:center;font-size:13px}
+.mbar{height:6px;border-radius:6px;background:var(--surface-2);overflow:hidden;margin-top:5px}
+.mbar i{display:block;height:100%;background:var(--gold);transition:width .8s ease}
+.pct{font-family:var(--display);font-size:20px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.kalshi{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted)}
+.kalshi b{color:var(--text);letter-spacing:.3px}
+.disclaim{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface)}
+.cardlist > div{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.cardlist > div:last-child{border-bottom:0}
+
+/* tickets */
+.ticket{border-radius:20px;overflow:hidden;background:var(--surface);border:1px solid var(--line)}
+.ticket .top{padding:14px;background:linear-gradient(135deg,#3a0f13,#1b1112)}
+.ticket .top.gold{background:linear-gradient(135deg,#3b2a0c,#1b1410)}
+.ticket .perf{border-top:2px dashed var(--line);margin:0 14px}
+.ticket .bot{padding:14px;display:grid;grid-template-columns:1fr 92px;gap:12px;align-items:center}
+.qr{width:92px;height:92px;background:#fff;border-radius:10px;padding:6px}
+.qr svg{display:block;width:100%;height:100%}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12px;margin:0}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600}
+
+/* host */
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:600;color:var(--muted)}
+.field input,.field select,.field textarea{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;width:100%}
+.field textarea{min-height:76px;resize:vertical}
+.seg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.seg button{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:11px;text-align:left;font-size:13px;font-weight:600;color:var(--text)}
+.seg button small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.seg button.on{border-color:var(--gold);background:linear-gradient(0deg,var(--gold-soft),var(--gold-soft)),var(--surface)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* lounge */
+.lounge-hero{border-radius:22px;padding:18px;background:radial-gradient(100% 80% at 0% 0%,#f2b54433,transparent 60%),linear-gradient(160deg,#241a0d,#120d0b 70%);border:1px solid #4d3a17}
+.big{font-family:var(--display);font-weight:800;font-size:44px;line-height:1}
+.amen{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.amen div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px;font-size:12px}
+.amen b{display:block;font-size:13px;margin-bottom:2px}
+.hours{display:grid;grid-template-columns:1fr auto;gap:6px;font-size:13px}
+
+/* nav + toast */
+.nav{position:absolute;left:0;right:0;bottom:0;padding:8px 10px calc(16px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,var(--bg) 75%,#0d0a0ae0);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);z-index:20}
+.nav button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--muted);padding:6px 0;position:relative}
+.nav button.on{color:var(--gold)}
+.nav svg{width:22px;height:22px}
+.badge{position:absolute;left:calc(50% + 6px);top:0;background:var(--red);color:#fff;border-radius:999px;font-size:9px;padding:1px 5px;line-height:1.4}
+.badge.gold{background:var(--gold);color:#1a1006}
+.toast{position:absolute;left:18px;right:18px;bottom:96px;background:var(--surface-2);border:1px solid var(--gold);border-radius:14px;padding:12px 14px;font-size:13px;font-weight:600;z-index:40;display:flex;gap:10px;align-items:center;transform:translateY(20px);opacity:0;transition:.25s;pointer-events:none}
+.toast.show{transform:none;opacity:1}
+.demo-tag{font-size:10px;color:var(--muted);text-align:center;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<div id="root"><div class="boot"><div><b>Loading the Nova Social app…</b>This needs an internet connection the first time it opens.</div></div></div>
+<noscript><p style="padding:16px">Turn on JavaScript to use the app demo.</p></noscript>
+
+<script>
+(function(){
+"use strict";
+/* ---------- library loader with CDN fallbacks ---------- */
+function loadScript(urls){
+  return new Promise(function(resolve,reject){
+    var i=0;
+    (function next(){
+      if(i>=urls.length){ reject(new Error('Could not load '+urls[0])); return; }
+      var s=document.createElement('script'); s.src=urls[i++]; s.async=false;
+      s.onload=function(){ resolve(); };
+      s.onerror=function(){ s.parentNode&&s.parentNode.removeChild(s); next(); };
+      document.head.appendChild(s);
+    })();
+  });
+}
+var REACT=['https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js','https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js','https://unpkg.com/react@18.3.1/umd/react.production.min.js'];
+var REACTDOM=['https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js','https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js','https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js'];
+var HTM=['https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js','https://unpkg.com/htm@3.1.1/dist/htm.umd.js'];
+function fail(){ document.getElementById('root').innerHTML='<div class="boot"><div><b>Couldn’t load the app</b>Check the internet connection and refresh the page.</div></div>'; }
+(window.React?Promise.resolve():loadScript(REACT))
+  .then(function(){ return window.ReactDOM?null:loadScript(REACTDOM); })
+  .then(function(){ return window.htm?null:loadScript(HTM); })
+  .then(function(){ start(window.React,window.ReactDOM,window.htm); })
+  .catch(fail);
+
+/* ---------- the app ---------- */
+function start(React,ReactDOM,htm){
+var html=htm.bind(React.createElement);
+var useState=React.useState, useEffect=React.useEffect, useRef=React.useRef, useMemo=React.useMemo, Fragment=React.Fragment;
+var money=function(n){return '$'+(Number.isInteger(n)?n:n.toFixed(2));};
+
+var ICON={
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>',
+  lounge:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12V8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v4"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v5H2z"/><path d="M5 18v2M19 18v2"/></svg>',
+  food:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M8 7c0-2 2-2 2-4M12 7c0-2 2-2 2-4M16 7c0-2 2-2 2-4"/></svg>',
+  tickets:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 0 0 4v2h18v-2a2 2 0 0 1 0-4v0a2 2 0 0 1 0-4V6H3z"/><path d="M14 6v12" stroke-dasharray="2 2"/></svg>',
+  host:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M12 12v6M9 15h6"/></svg>',
+  back:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5 8 12l7 7"/></svg>',
+  bell:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>',
+  pin:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>',
+  clock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  check:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg>',
+  checkBig:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg>',
+  logo:'<svg width="28" height="28" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="62" fill="none" stroke="#e3262f" stroke-width="14"/><path d="M100,12 C116,84 116,84 188,100 C116,116 116,116 100,188 C84,116 84,116 12,100 C84,84 84,84 100,12Z" fill="#f2b544"/></svg>',
+  logoBig:'<svg width="46" height="46" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="62" fill="none" stroke="#e3262f" stroke-width="10"/><path d="M100,12 C116,84 116,84 188,100 C116,116 116,116 100,188 C84,116 84,116 12,100 C84,84 84,84 100,12Z" fill="#f2b544"/></svg>'
+};
+function Ico(p){ return html`<span className="ico" aria-hidden="true" dangerouslySetInnerHTML=${{__html:ICON[p.n]}}></span>`; }
+
+/* ---------- sample data (fictional) ---------- */
+var EVENTS=[
+  {id:'fight',type:'fight',tag:'PPV Fight Night',title:'Reyes vs. Okafor',sub:'Heavyweight boxing · full PPV card',day:'Sat',date:21,time:'5:00 PM doors · main card 8 PM',room:'Auditorium 2',from:20,left:22,
+    packages:[{id:'t',name:'Fight ticket',desc:'Seat for the full card',price:20,zone:'rows',credit:0},{id:'c',name:'Fight combo',desc:'Seat + $10 food & drink credit',price:30,zone:'rows',credit:10},{id:'r',name:'Ringside table',desc:'Group table up front + food bundle',price:40,zone:'table',credit:15,per:true},{id:'s',name:'Fight squad',desc:'4 seats together + shareable platter',price:100,zone:'rows',credit:25,fixed:4}]},
+  {id:'games-mon',type:'games',tag:'Game Night',title:'Big-Screen Party Games',sub:'Kart racing & party games on a 40-ft screen',day:'Mon',date:16,time:'7:00 – 10:00 PM',room:'Auditorium 2',from:5,left:41,
+    packages:[{id:'t',name:'Casual entry',desc:'Drop-in play all night',price:5,zone:'rows',credit:0},{id:'c',name:'Entry + snack',desc:'Entry + $5 food credit',price:10,zone:'rows',credit:5},{id:'s',name:'Squad',desc:'4 entries + shareable platter',price:30,zone:'rows',credit:15,fixed:4}]},
+  {id:'film',type:'film',tag:'Classic Film Night',title:'2000s Throwback Sing-along',sub:'Themed screening · costume contest',day:'Tue',date:17,time:'7:30 PM',room:'Auditorium 2',from:10,left:35,
+    packages:[{id:'t',name:'Ticket',desc:'Reserved seat',price:10,zone:'rows',credit:0},{id:'c',name:'Combo',desc:'Seat + $5 food & drink credit',price:15,zone:'rows',credit:5},{id:'r',name:'Table',desc:'Group table + food bundle',price:20,zone:'table',credit:10,per:true},{id:'s',name:'Squad',desc:'4 seats + shareable platter',price:50,zone:'rows',credit:15,fixed:4}]},
+  {id:'games-wed',type:'games',tag:'Game Night',title:'Fighting Game Bracket',sub:'32-player tournament · prizes for top 3',day:'Wed',date:18,time:'7:00 PM check-in',room:'Auditorium 2',from:10,left:9,
+    packages:[{id:'t',name:'Tournament entry',desc:'Bracket spot + seat',price:10,zone:'rows',credit:0},{id:'c',name:'Entry + combo',desc:'Bracket spot + $5 food credit',price:15,zone:'rows',credit:5},{id:'v',name:'Spectator',desc:'Watch and cheer',price:5,zone:'rows',credit:0}]},
+  {id:'music',type:'music',tag:'Live Music',title:'Student Band Showcase',sub:'Three campus bands · standing area up front',day:'Thu',date:19,time:'8:00 PM',room:'Auditorium 2',from:10,left:28,
+    packages:[{id:'t',name:'General admission',desc:'Entry + seat',price:10,zone:'rows',credit:0},{id:'c',name:'Combo',desc:'Entry + $5 food & drink credit',price:15,zone:'rows',credit:5},{id:'r',name:'Table',desc:'Group table + food bundle',price:25,zone:'table',credit:12,per:true},{id:'s',name:'Squad',desc:'4 entries + shareable platter',price:50,zone:'rows',credit:15,fixed:4}]},
+  {id:'dj',type:'music',tag:'Live Music',title:'Late Shift DJ Set',sub:'Campus DJs · after the 9 PM films',day:'Fri',date:20,time:'10:00 PM – 12:30 AM',room:'Auditorium 2',from:10,left:44,
+    packages:[{id:'t',name:'General admission',desc:'Entry',price:10,zone:'rows',credit:0},{id:'c',name:'Combo',desc:'Entry + $5 food & drink credit',price:15,zone:'rows',credit:5},{id:'s',name:'Squad',desc:'4 entries + shareable platter',price:50,zone:'rows',credit:15,fixed:4}]}
+];
+var MENU={
+  kitchen:[
+    {id:'wings',n:'Wings, 10 pc',d:'Buffalo or lemon pepper',p:14,c:'#5a1c14',i:'W'},
+    {id:'pizza',n:'Shareable pizza',d:'16" pepperoni or cheese',p:18,c:'#5a3014',i:'P'},
+    {id:'nachos',n:'Loaded nachos',d:'Feeds 2–3',p:16,c:'#4d3a10',i:'N'},
+    {id:'platter',n:'Fight Night platter',d:'Wings, sliders, fries · feeds 4',p:32,c:'#5a1420',i:'FN'}
+  ],
+  concessions:[
+    {id:'popcorn',n:'Large popcorn',d:'Free refill on fight nights',p:8,c:'#4d3e10',i:'PC'},
+    {id:'soda',n:'Fountain drink',d:'Large',p:6,c:'#14304d',i:'D'},
+    {id:'pretzel',n:'Pretzel bites',d:'With cheese dip',p:8,c:'#4d2e10',i:'PB'},
+    {id:'candy',n:'Candy',d:'Pick at the counter',p:5,c:'#3d1440',i:'C'}
+  ]
+};
+var FOOD={}; MENU.kitchen.concat(MENU.concessions).forEach(function(m){FOOD[m.id]=m;});
+var VALID=['home','book','food','live','tickets','host','lounge'];
+var NAV=[['home','Home'],['lounge','Lounge'],['food','Food'],['tickets','Tickets'],['host','Host']];
+var RAIL=[['home','Home','Events feed'],['book','Booking','Packages + seat map'],['food','Food','Order to your seat'],['live','Fight Night','Live odds'],['tickets','Tickets','Wallet + QR'],['host','Host an event','Clubs & artists'],['lounge','Lounge','Passes']];
+var TABLES=['T1','T2','T3','T4','T5'], ROWS=['A','B','C','D','E','F','G','H'];
+
+function taken(id,eventId){var h=0,s=id+eventId;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%997;return h%3===0;}
+function qrSVG(code){
+  var n=25, seed=0, i, x, y, r='';
+  for(i=0;i<code.length;i++) seed=(seed*131+code.charCodeAt(i))>>>0;
+  var rnd=function(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+  var inF=function(x,y){return (x<8&&y<8)||(x>16&&y<8)||(x<8&&y>16);};
+  var finder=function(x,y){return '<rect x="'+x+'" y="'+y+'" width="7" height="7" fill="#000"/><rect x="'+(x+1)+'" y="'+(y+1)+'" width="5" height="5" fill="#fff"/><rect x="'+(x+2)+'" y="'+(y+2)+'" width="3" height="3" fill="#000"/>';};
+  for(y=0;y<n;y++)for(x=0;x<n;x++){ if(inF(x,y))continue; if(rnd()<.48) r+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="#000"/>'; }
+  return '<svg viewBox="0 0 '+n+' '+n+'" shape-rendering="crispEdges" role="img" aria-label="Entry code '+code+'">'+r+finder(0,0)+finder(18,0)+finder(0,18)+'</svg>';
+}
+function QR(p){ var svg=useMemo(function(){return qrSVG(p.code);},[p.code]); return html`<div className="qr" dangerouslySetInnerHTML=${{__html:svg}}></div>`; }
+
+/* ---------- app ---------- */
+function App(){
+  var hash0=(location.hash||'').slice(1);
+  var _v=useState(VALID.indexOf(hash0)>=0?hash0:'home'), view=_v[0], setView=_v[1];
+  var _f=useState('all'), filter=_f[0], setFilter=_f[1];
+  var _e=useState('fight'), eventId=_e[0], setEventId=_e[1];
+  var _p=useState('c'), pkgId=_p[0], setPkgId=_p[1];
+  var _q=useState(2), qty=_q[0], setQty=_q[1];
+  var _s=useState([]), seats=_s[0], setSeats=_s[1];
+  var _mt=useState('kitchen'), menuTab=_mt[0], setMenuTab=_mt[1];
+  var _c=useState({}), cart=_c[0], setCart=_c[1];
+  var _o=useState(null), order=_o[0], setOrder=_o[1];
+  var _ht=useState('music'), hostType=_ht[0], setHostType=_ht[1];
+  var _hr=useState('Auditorium 2'), hostRoom=_hr[0], setHostRoom=_hr[1];
+  var _hs=useState(false), hostSent=_hs[0], setHostSent=_hs[1];
+  var _t=useState([{id:'NS-48211',eventId:'music',pkg:'Combo',seats:['D4'],credit:5}]), tickets=_t[0], setTickets=_t[1];
+  var _ps=useState(null), pass=_ps[0], setPass=_ps[1];
+  var _od=useState({a:62,dist:41,ko:47}), odds=_od[0], setOdds=_od[1];
+  var _sc=useState(134), secs=_sc[0], setSecs=_sc[1];
+  var _to=useState(null), toast=_to[0], setToast=_to[1];
+  var screenRef=useRef(null), roundStart=useRef(Date.now()), lastToast=useRef('');
+
+  var ev=EVENTS.find(function(x){return x.id===eventId;});
+  var pkg=ev.packages.find(function(x){return x.id===pkgId;})||ev.packages[0];
+  var need=pkg.fixed||qty;
+  var creditLeft=tickets.reduce(function(s,t){return s+(t.credit||0);},0);
+  var seatLoc=tickets[0]?('Aud 2 · Seat '+tickets[0].seats[0]):'Lounge';
+  var cartCount=Object.keys(cart).reduce(function(a,k){return a+cart[k];},0);
+  var roundNow=7+Math.min(4,Math.floor((Date.now()-roundStart.current)/60000));
+  if(toast) lastToast.current=toast.msg;
+
+  /* routing + scroll */
+  useEffect(function(){
+    if(screenRef.current) screenRef.current.scrollTop=0;
+    try{ if(location.hash!=='#'+view) history.replaceState(null,'','#'+view); }catch(e){}
+  },[view]);
+  useEffect(function(){
+    var f=function(){var h=(location.hash||'').slice(1); if(VALID.indexOf(h)>=0) setView(h);};
+    window.addEventListener('hashchange',f); return function(){window.removeEventListener('hashchange',f);};
+  },[]);
+  /* live odds + fight clock tick only while the Fight Night screen is open */
+  useEffect(function(){
+    if(view!=='live') return;
+    var clamp=function(v,a,b){return Math.max(a,Math.min(b,v));};
+    var t=setInterval(function(){ setOdds(function(o){
+      var dist=clamp(o.dist+Math.round((Math.random()-.55)*3),15,70);
+      return {a:clamp(o.a+Math.round((Math.random()-.45)*4),35,85),dist:dist,ko:clamp(100-dist+Math.round((Math.random()-.5)*6)-12,15,80)};
+    }); },2800);
+    var c=setInterval(function(){ setSecs(function(s){return s<=0?180:s-1;}); },1000);
+    return function(){clearInterval(t);clearInterval(c);};
+  },[view]);
+  /* food order progress */
+  useEffect(function(){
+    if(!order||order.step>=3) return;
+    var t=setTimeout(function(){ setOrder(function(o){return o?Object.assign({},o,{step:o.step+1}):o;}); }, order.step===0?2200:2600);
+    return function(){clearTimeout(t);};
+  },[order]);
+  useEffect(function(){ if(!toast) return; var t=setTimeout(function(){setToast(null);},2600); return function(){clearTimeout(t);}; },[toast]);
+
+  function say(msg){ setToast({msg:msg,id:Date.now()}); }
+  function go(v){ setView(v); }
+  function openBook(id){
+    var e=EVENTS.find(function(x){return x.id===id;});
+    setEventId(id); setPkgId((e.packages[1]||e.packages[0]).id); setQty(2); setSeats([]); setView('book');
+    if(view==='book'&&screenRef.current) screenRef.current.scrollTop=0;
+  }
+  function choosePkg(p){ setPkgId(p.id); setSeats([]); if(p.fixed) setQty(p.fixed); }
+  function changeQty(d){ var q=Math.max(1,Math.min(6,qty+d)); setQty(q); setSeats(function(s){return s.slice(0,q);}); }
+  function toggleSeat(id){ setSeats(function(s){ if(s.indexOf(id)>=0) return s.filter(function(x){return x!==id;}); return s.length>=need?s.slice(1).concat(id):s.concat(id); }); }
+  function book(){
+    var id='NS-'+(48212+tickets.length*137);
+    setTickets(function(t){return [{id:id,eventId:ev.id,pkg:pkg.name+(pkg.fixed?'':' × '+qty),seats:seats.slice(),credit:pkg.credit*(pkg.fixed?1:qty)}].concat(t);});
+    setSeats([]); setView('tickets'); say('Booked · '+ev.title);
+  }
+  function addCart(id,d){ setCart(function(c){var n=Object.assign({},c); n[id]=Math.max(0,(c[id]||0)+d); return n;}); }
+  function placeOrder(){
+    var lines=Object.keys(cart).filter(function(k){return cart[k]>0;}).map(function(k){return [k,cart[k]];});
+    var sub=lines.reduce(function(s,l){return s+FOOD[l[0]].p*l[1];},0);
+    var credit=Math.min(creditLeft,sub), use=credit;
+    setTickets(function(ts){return ts.map(function(t){var u=Math.min(t.credit,use); use-=u; return Object.assign({},t,{credit:t.credit-u});});});
+    setOrder({id:'#'+(3100+Math.floor(sub*7)),lines:lines,paid:sub-credit,step:0}); setCart({});
+    say('Order placed · delivering to your seat');
+  }
+  function buyPass(kind){
+    var p=kind==='day'?{kind:'day',name:'Day pass',when:'Today',perk:'Lounge until close',code:'NL-D-2207'}:{kind:'month',name:'Nova Social Pass',when:'Renews Dec 11',perk:'20% off events',code:'NL-M-5531'};
+    setPass(p); say(p.name+' added to your wallet');
+  }
+  function submitHost(e){
+    e.preventDefault();
+    var sel=e.target.querySelector('#hRoom'); if(sel) setHostRoom(sel.value.split(' ·')[0]);
+    setHostSent(true); if(screenRef.current) screenRef.current.scrollTop=0; say('Request sent to the Nova Social team');
+  }
+
+  /* ---------- screens ---------- */
+  function Home(){
+    var list=EVENTS.filter(function(e){return filter==='all'||e.type===filter;});
+    return html`<${Fragment}>
+      <div className="topbar"><div className="brand"><${Ico} n="logo"/><b>Nova <span>Social</span></b></div><button className="icon-btn" aria-label="Notifications"><${Ico} n="bell"/></button></div>
+      <div><div className="label">Nova Cinema · Irvine</div><div className="h2" style=${{marginTop:4}}>This week</div></div>
+      <div className="hero">
+        <div className="between"><span className="pill red"><i className="dot live-dot"></i>Live now</span><span className="pill gold">PPV Fight Night</span></div>
+        <div className="vs">Reyes <em>vs</em> Okafor</div>
+        <div className="hero-meta"><span className="row" style=${{gap:5}}><${Ico} n="pin"/>Auditorium 2</span><span className="row" style=${{gap:5}}><${Ico} n="clock"/>Round ${roundNow} of 12</span></div>
+        <div className="btns"><button className="btn" onClick=${function(){go('live');}}>Watch live odds</button><button className="btn ghost" onClick=${function(){openBook('fight');}}>Book seats</button></div>
+      </div>
+      <button className="card lounge-strip" onClick=${function(){go('lounge');}}>
+        <div style=${{flex:1,minWidth:0}}>
+          <div className="between"><b>Lounge is open</b><span className="muted tnum" style=${{fontSize:12}}>23 / 80 inside</span></div>
+          <div className="row" style=${{marginTop:8}}><div className="meter"><i style=${{width:'29%'}}></i></div></div>
+          <div className="muted" style=${{fontSize:12,marginTop:6}}>Drop in until midnight · $5 day pass</div>
+        </div>
+      </button>
+      <div className="chips" role="tablist">
+        ${[['all','All'],['fight','Fight nights'],['music','Live music'],['film','Classic films'],['games','Game nights']].map(function(f){
+          return html`<button key=${f[0]} className=${'chip'+(filter===f[0]?' on':'')} onClick=${function(){setFilter(f[0]);}}>${f[1]}</button>`;})}
+      </div>
+      <div className="view" style=${{gap:10}}>
+        ${list.map(function(e){return html`
+          <button key=${e.id} className="event" onClick=${function(){openBook(e.id);}}>
+            <div className="datebox"><small>${e.day}</small><b>${e.date}</b><small>Nov</small></div>
+            <div style=${{minWidth:0}}><div className=${'tag '+e.type}>${e.tag}</div><h3>${e.title}</h3><div className="sub">${e.time}</div></div>
+            <div className="from">from<b>$${e.from}</b>${e.left<15?html`<span style=${{color:'var(--red)',fontWeight:700}}>${e.left} left</span>`:null}</div>
+          </button>`;})}
+      </div>
+      <div className="demo-tag">Demo · fictional sample events</div>
+    <//>`;
+  }
+
+  function Book(){
+    var total=pkg.fixed?pkg.price:pkg.price*qty, zone=pkg.zone;
+    function seatBtn(id,isTable){
+      var tk=taken(id,eventId), sel=seats.indexOf(id)>=0, dim=(zone==='table')!==isTable;
+      var cls=sel?'sel':tk?'taken':dim?'dim':'free';
+      return html`<button key=${id} className=${'seat '+cls} aria-label=${'Seat '+id+(tk?' taken':'')} disabled=${tk||dim} onClick=${function(){toggleSeat(id);}}></button>`;
+    }
+    var creditTotal=pkg.credit*(pkg.fixed?1:qty);
+    return html`<${Fragment}>
+      <button className="back" onClick=${function(){go('home');}}><${Ico} n="back"/>Back</button>
+      <div>
+        <div className=${'tag '+ev.type}>${ev.tag}</div>
+        <div className="h2" style=${{fontSize:30,marginTop:4}}>${ev.title}</div>
+        <div className="muted" style=${{marginTop:4}}>${ev.sub}</div>
+        <div className="row muted" style=${{marginTop:8,fontSize:12,gap:14,flexWrap:'wrap'}}><span className="row" style=${{gap:5}}><${Ico} n="clock"/>${ev.day} Nov ${ev.date} · ${ev.time}</span><span className="row" style=${{gap:5}}><${Ico} n="pin"/>${ev.room}</span></div>
+        ${ev.type==='fight'?html`<div className="pill gold" style=${{marginTop:10}}>Live odds powered by Kalshi on screen</div>`:null}
+      </div>
+      <div className="label">Choose a package</div>
+      <div className="view" style=${{gap:8}}>
+        ${ev.packages.map(function(x){return html`
+          <button key=${x.id} className=${'pkg'+(x.id===pkg.id?' on':'')} onClick=${function(){choosePkg(x);}}>
+            <b>${x.name}</b><span>${x.desc}</span>
+            <div className="price">$${x.price}${x.fixed?null:x.per?html`<small>/person</small>`:null}</div>
+          </button>`;})}
+      </div>
+      ${pkg.fixed?null:html`<div className="between card" style=${{padding:'10px 14px'}}><span>${pkg.zone==='table'?'People at table':'Number of seats'}</span>
+        <div className="stepper"><button aria-label="Fewer" onClick=${function(){changeQty(-1);}}>−</button><b className="tnum">${qty}</b><button aria-label="More" onClick=${function(){changeQty(1);}}>+</button></div></div>`}
+      <div className="between"><div className="label">Pick ${need} ${zone==='table'?'table seat':'seat'}${need>1?'s':''}</div><span className="muted tnum" style=${{fontSize:12}}>${seats.length} / ${need}</span></div>
+      <div className="seatmap">
+        <div className="screenbar"></div><div className="screenlabel">SCREEN</div>
+        <div className="tables">${TABLES.map(function(t){return html`<div key=${t} className="table" title=${'Ringside table '+t}>${[1,2,3,4].map(function(n){return seatBtn(t+'-'+n,true);})}</div>`;})}</div>
+        <div className="seatrows">${ROWS.map(function(r){return html`<div key=${r} className="srow"><span className="rl">${r}</span>${[1,2,3,4,5].map(function(n){return seatBtn(r+n,false);})}<span className="gap"></span>${[6,7,8,9,10].map(function(n){return seatBtn(r+n,false);})}<span className="rl">${r}</span></div>`;})}</div>
+        <div className="rail-zone">Standing rail · free walk-ins on weeknights</div>
+        <div className="legend"><span><i style=${{background:'#5b4548'}}></i>Open</span><span><i style=${{background:'var(--gold)'}}></i>Yours</span><span><i style=${{background:'#241b1c',border:'1px solid #3a2c2e'}}></i>Taken</span><span><i style=${{background:'#2a1c14',border:'1px solid #5a3d1f'}}></i>Ringside table</span></div>
+      </div>
+      <div className="summary">
+        <div className="between">
+          <div><div className="muted" style=${{fontSize:12}}>${pkg.name}${pkg.fixed?'':' × '+qty}${pkg.credit?' · includes '+money(creditTotal)+' food credit':''}</div><div className="price">${money(total)}</div></div>
+          <div style=${{width:'56%'}}><button className="btn" disabled=${seats.length!==need} onClick=${book}>${seats.length===need?'Book & pay':'Pick '+(need-seats.length)+' more'}</button></div>
+        </div>
+      </div>
+    <//>`;
+  }
+
+  function Food(){
+    if(order) return FoodTrack();
+    var items=MENU[menuTab];
+    var lines=Object.keys(cart).filter(function(k){return cart[k]>0;});
+    var sub=lines.reduce(function(s,k){return s+FOOD[k].p*cart[k];},0);
+    var credit=Math.min(creditLeft,sub);
+    return html`<${Fragment}>
+      <div className="topbar"><div><div className="label">Order to your seat</div><div className="h2" style=${{marginTop:4}}>Food & drinks</div></div></div>
+      <div className="card deliver"><div className="pill gold">Deliver to</div><div style=${{minWidth:0}}><b>${seatLoc}</b><div className="muted" style=${{fontSize:12}}>Reyes vs. Okafor · ~12 min</div></div></div>
+      <div className="chips"><button className=${'chip'+(menuTab==='kitchen'?' on':'')} onClick=${function(){setMenuTab('kitchen');}}>Kitchen partner</button><button className=${'chip'+(menuTab==='concessions'?' on':'')} onClick=${function(){setMenuTab('concessions');}}>Concessions</button></div>
+      <div className="view" style=${{gap:10}}>
+        ${items.map(function(m){var q=cart[m.id]||0; return html`
+          <div key=${m.id} className="menu-item"><div className="food-ico" style=${{background:m.c}}>${m.i}</div>
+            <div style=${{minWidth:0}}><h4>${m.n}</h4><p>${m.d}</p><div className="tnum" style=${{fontWeight:700,marginTop:3}}>$${m.p}</div></div>
+            ${q?html`<div className="qty"><button aria-label="Remove one" onClick=${function(){addCart(m.id,-1);}}>−</button><b className="tnum">${q}</b><button aria-label="Add one" onClick=${function(){addCart(m.id,1);}}>+</button></div>`
+               :html`<button className="add" aria-label=${'Add '+m.n} onClick=${function(){addCart(m.id,1);}}>+</button>`}
+          </div>`;})}
+      </div>
+      ${lines.length?html`
+        <div className="card view" style=${{gap:8}}>
+          ${lines.map(function(k){return html`<div key=${k} className="between"><span>${cart[k]} × ${FOOD[k].n}</span><span className="tnum">${money(FOOD[k].p*cart[k])}</span></div>`;})}
+          <div className="between muted"><span>Package food credit</span><span className="tnum" style=${{color:'var(--ok)'}}>−${money(credit)}</span></div>
+          <div className="between" style=${{borderTop:'1px solid var(--line)',paddingTop:8}}><b>Total</b><b className="tnum">${money(sub-credit)}</b></div>
+        </div>
+        <div className="summary"><button className="btn" onClick=${placeOrder}>Place order · ${money(sub-credit)}</button></div>`
+      :html`<div className="muted" style=${{textAlign:'center',fontSize:12}}>Your ${money(creditLeft)} package credit applies at checkout.</div>`}
+    <//>`;
+  }
+  function FoodTrack(){
+    var steps=['Order received','Being prepared','On the way to your seat','Delivered'];
+    var subs=['Kitchen partner + concessions','About 8 minutes','A runner is bringing it to your seat','Hand-delivered'];
+    var st=order.step;
+    return html`<${Fragment}>
+      <div><div className="label">Order ${order.id}</div><div className="h2" style=${{marginTop:4}}>${st>=3?'Enjoy':'On its way'}</div></div>
+      <div className="card deliver"><div className="pill gold">To</div><b>${seatLoc}</b></div>
+      <div className="card track">${steps.map(function(s,i){var done=i<st||st===3; return html`
+        <div key=${s} className=${'step'+(done?' done':i===st?' now':'')}><div className="b">${done?html`<${Ico} n="check"/>`:i+1}</div><div><b>${s}</b><div className="muted" style=${{fontSize:12}}>${subs[i]}</div></div></div>`;})}</div>
+      <div className="card view" style=${{gap:6}}>
+        ${order.lines.map(function(l){return html`<div key=${l[0]} className="between"><span>${l[1]} × ${FOOD[l[0]].n}</span><span className="tnum">${money(FOOD[l[0]].p*l[1])}</span></div>`;})}
+        <div className="between muted"><span>Paid after credit</span><span className="tnum">${money(order.paid)}</span></div>
+      </div>
+      <button className="btn ghost" onClick=${function(){setOrder(null);}}>Start a new order</button>
+    <//>`;
+  }
+
+  function Live(){
+    var o=odds;
+    return html`<${Fragment}>
+      <div className="between"><button className="back" onClick=${function(){go('home');}}><${Ico} n="back"/>Home</button><span className="pill red"><i className="dot live-dot"></i>Live</span></div>
+      <div><div className="label">PPV Fight Night · Auditorium 2</div><div className="h2" style=${{marginTop:4}}>Main event</div></div>
+      <div className="card"><div className="fighters">
+        <div className="fighter"><div className="ava" style=${{background:'var(--red)'}}>MR</div><b>Marco Reyes</b><small>24–2 · 18 KO</small></div>
+        <div><div className="round">Rd ${roundNow}</div><div className="muted tnum" style=${{fontSize:12}}>${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}</div></div>
+        <div className="fighter"><div className="ava" style=${{background:'#3a2c2e'}}>DO</div><b>Daniel Okafor</b><small>19–1 · 15 KO</small></div>
+      </div></div>
+      <div className="card view" style=${{gap:12}}>
+        <div className="kalshi"><span className="label">Live odds · to win</span><span>Powered by <b>Kalshi</b></span></div>
+        <div className="oddsbar"><div className="a" style=${{width:o.a+'%'}}>${o.a}%</div><div className="b" style=${{width:(100-o.a)+'%'}}>${100-o.a}%</div></div>
+        <div className="between muted" style=${{fontSize:12}}><span>Reyes</span><span>Okafor</span></div>
+        <div className="market">
+          <div className="mrow"><div>Fight goes the distance<div className="mbar"><i style=${{width:o.dist+'%'}}></i></div></div><div className="pct">${o.dist}%</div></div>
+          <div className="mrow"><div>KO/TKO before round 10<div className="mbar"><i style=${{width:o.ko+'%'}}></i></div></div><div className="pct">${o.ko}%</div></div>
+        </div>
+        <div className="muted" style=${{fontSize:11}}>Updated just now</div>
+      </div>
+      <div className="disclaim">Odds are market data shown for information only. Nova Social does not take bets or link to trading.</div>
+      <div className="card cardlist">
+        <div className="label" style=${{borderBottom:0,paddingBottom:4}}>Tonight's card</div>
+        <div><span>Cruz def. Shah</span><span className="muted">UD · 10 rds</span></div>
+        <div><span>Bello def. Hart</span><span className="muted">TKO · Rd 6</span></div>
+        <div><span>Reyes vs. Okafor</span><span style=${{color:'var(--red)',fontWeight:700}}>Live</span></div>
+      </div>
+      <button className="btn gold" onClick=${function(){go('food');}}>Order food to ${seatLoc.replace('Aud 2 · ','')}</button>
+    <//>`;
+  }
+
+  function Tickets(){
+    return html`<${Fragment}>
+      <div><div className="label">Your wallet</div><div className="h2" style=${{marginTop:4}}>Tickets</div></div>
+      ${pass?html`<div className="ticket">
+        <div className="top gold"><div className="between"><span className="pill gold">${pass.name}</span><span className="muted" style=${{fontSize:12}}>${pass.when}</span></div><div className="h2" style=${{fontSize:24,marginTop:8}}>Nova Lounge</div><div className="muted" style=${{fontSize:12}}>Auditorium 1 · scan at the door</div></div>
+        <div className="perf"></div>
+        <div className="bot"><dl className="kv"><dt>Pass</dt><dd>${pass.name}</dd><dt>Perk</dt><dd>${pass.perk}</dd><dt>Code</dt><dd className="tnum">${pass.code}</dd></dl><${QR} code=${pass.code}/></div>
+      </div>`:null}
+      ${tickets.map(function(t){var e=EVENTS.find(function(x){return x.id===t.eventId;}); return html`
+        <div key=${t.id} className="ticket">
+          <div className="top"><div className="between"><span className=${'tag '+e.type} style=${e.type==='fight'?{color:'#ff8a8f'}:null}>${e.tag}</span><span className="muted" style=${{fontSize:12}}>${e.day} Nov ${e.date}</span></div>
+            <div className="h2" style=${{fontSize:24,marginTop:8}}>${e.title}</div><div className="muted" style=${{fontSize:12}}>${e.time}</div></div>
+          <div className="perf"></div>
+          <div className="bot"><dl className="kv"><dt>Package</dt><dd>${t.pkg}</dd><dt>Room</dt><dd>${e.room}</dd><dt>Seats</dt><dd>${t.seats.join(', ')}</dd><dt>Food credit</dt><dd style=${{color:'var(--ok)'}}>${money(t.credit)}</dd><dt>Order</dt><dd className="tnum">${t.id}</dd></dl><${QR} code=${t.id}/></div>
+        </div>`;})}
+      <div className="muted" style=${{textAlign:'center',fontSize:12}}>Show the code at the door. Food credit applies automatically when you order to your seat.</div>
+    <//>`;
+  }
+
+  function Host(){
+    if(hostSent) return html`<div className="view" style=${{paddingTop:40,textAlign:'center'}}>
+      <div style=${{width:64,height:64,borderRadius:'50%',background:'var(--ok)',color:'#06150c',display:'grid',placeItems:'center',margin:'0 auto'}}><${Ico} n="checkBig"/></div>
+      <div className="h2">Request sent</div>
+      <p className="muted" style=${{margin:0}}>The Nova Social team replies within 48 hours with availability and a quote for ${hostRoom}.</p>
+      <button className="btn ghost" onClick=${function(){setHostSent(false);}}>Send another request</button>
+    </div>`;
+    var types=[['music','Live music','Band, DJ, a cappella'],['film','Film night','Club screening'],['games','Game night','Tournament or casual'],['private','Private rental','Birthdays, socials']];
+    return html`<${Fragment}>
+      <div><div className="label">Clubs, artists & groups</div><div className="h2" style=${{marginTop:4}}>Host an event</div></div>
+      <p className="muted" style=${{margin:0}}>Book a Nova Social room for your club, band or group. Artists keep 60% of ticket sales; private rentals start at $100/hour.</p>
+      <form className="view" style=${{gap:14}} onSubmit=${submitHost}>
+        <div className="field"><label>Event type</label><div className="seg">${types.map(function(t){return html`<button key=${t[0]} type="button" className=${hostType===t[0]?'on':''} onClick=${function(){setHostType(t[0]);}}>${t[1]}<small>${t[2]}</small></button>`;})}</div></div>
+        <div className="field"><label htmlFor="hName">Club, artist or group name</label><input id="hName" defaultValue="UCI Boxing Club" required/></div>
+        <div className="two">
+          <div className="field"><label htmlFor="hDate">Date</label><input id="hDate" type="date" defaultValue="2026-12-03"/></div>
+          <div className="field"><label htmlFor="hGuests">Expected guests</label><input id="hGuests" type="number" min="1" max="100" defaultValue="40"/></div>
+        </div>
+        <div className="field"><label htmlFor="hRoom">Room</label><select id="hRoom" defaultValue=${hostRoom==='Auditorium 1'?'Auditorium 1 · 80 seats, lounge setup':'Auditorium 2 · 100 seats, ringside tables'}><option>Auditorium 2 · 100 seats, ringside tables</option><option>Auditorium 1 · 80 seats, lounge setup</option></select></div>
+        <div className="field"><label htmlFor="hNotes">What do you have in mind?</label><textarea id="hNotes" defaultValue="Club watch party for the December PPV card, ~40 members, want two ringside tables and a food platter."></textarea></div>
+        <button className="btn" type="submit">Send request</button>
+      </form>
+    <//>`;
+  }
+
+  function Lounge(){
+    return html`<${Fragment}>
+      <div><div className="label">Auditorium 1 · drop in anytime</div><div className="h2" style=${{marginTop:4}}>The Lounge</div></div>
+      <div className="lounge-hero view" style=${{gap:10}}>
+        <div className="between"><span className="pill" style=${{background:'var(--ok)',color:'#06150c'}}><i className="dot"></i>Open now</span><span className="muted" style=${{fontSize:12}}>Until 12:00 AM</span></div>
+        <div className="row" style=${{alignItems:'flex-end',gap:8}}><span className="big tnum">23</span><span className="muted" style=${{paddingBottom:6}}>of 80 inside · plenty of room</span></div>
+        <div className="meter"><i style=${{width:'29%'}}></i></div>
+        <div className="muted" style=${{fontSize:12}}>No showtimes. Hang out, study, play and order food to your table.</div>
+      </div>
+      <div className="amen">
+        <div><b>Big-screen consoles</b>Party & fighting games</div>
+        <div><b>Study tables</b>Wi-Fi + charging</div>
+        <div><b>Board games</b>Free to borrow</div>
+        <div><b>Seat delivery</b>Kitchen + concessions</div>
+      </div>
+      <div className="label">Get in</div>
+      <div className="view" style=${{gap:8}}>
+        <button className=${'pkg'+(pass&&pass.kind==='day'?' on':'')} onClick=${function(){buyPass('day');}}><b>Day pass</b><span>Lounge access until close today</span><div className="price">$5</div></button>
+        <button className=${'pkg'+(pass&&pass.kind==='month'?' on':'')} onClick=${function(){buyPass('month');}}><b>Nova Social Pass</b><span>Unlimited lounge + 20% off every event</span><div className="price">$20<small>/mo</small></div></button>
+      </div>
+      <div className="card"><div className="label" style=${{marginBottom:8}}>Hours</div><div className="hours"><span>Mon – Thu</span><span className="tnum">12 PM – 12 AM</span><span>Fri</span><span className="tnum">12 PM – 1 AM</span><span>Sat – Sun</span><span className="tnum">11 AM – 12 AM</span></div></div>
+    <//>`;
+  }
+
+  var SCREENS={home:Home,book:Book,food:Food,live:Live,tickets:Tickets,host:Host,lounge:Lounge};
+  var navKey=(view==='book'||view==='live')?'home':view;
+  var ticketCount=tickets.length+(pass?1:0);
+
+  return html`<div className="stage">
+    <aside className="rail" aria-label="Demo navigator">
+      <${Ico} n="logoBig"/>
+      <h1>Nova <span>Social</span><br/>App demo</h1>
+      <p>Tap through the student app for Nova Social at the Irvine pilot. Jump to any screen below.</p>
+      <div className="rail-list">${RAIL.map(function(r){return html`<button key=${r[0]} className=${view===r[0]?'on':''} onClick=${function(){go(r[0]);}}><span>${r[1]}</span><small>${r[2]}</small></button>`;})}</div>
+      <div className="note">Prototype with fictional sample events, fighters and prices. Live odds shown for information only; the app takes no bets.</div>
+    </aside>
+    <div className="phone">
+      <div className="notch" aria-hidden="true"></div>
+      <div className="statusbar" aria-hidden="true"><span>9:41</span><span className="sb-r">
+        <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="currentColor"/><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="currentColor"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3" fill="none" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><rect x="22.5" y="4" width="2" height="4" rx="1" fill="currentColor" opacity=".5"/></svg>
+      </span></div>
+      <main className="screen" ref=${screenRef}>${SCREENS[view]()}</main>
+      <div className=${'toast'+(toast?' show':'')} role="status" aria-live="polite"><${Ico} n="check"/><span>${lastToast.current}</span></div>
+      <nav className="nav" aria-label="App sections">
+        ${NAV.map(function(n){return html`<button key=${n[0]} className=${navKey===n[0]?'on':''} aria-label=${n[1]} onClick=${function(){go(n[0]);}}>
+          <${Ico} n=${n[0]}/>
+          ${n[0]==='food'&&cartCount?html`<span className="badge">${cartCount}</span>`:null}
+          ${n[0]==='tickets'?html`<span className="badge gold">${ticketCount}</span>`:null}
+          <span>${n[1]}</span></button>`;})}
+      </nav>
+    </div>
+  </div>`;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
+}
+})();
+</script>
+</body>
+</html>
